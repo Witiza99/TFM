@@ -8,6 +8,11 @@ import re
 from uuid import getnode as get_mac
 import datetime
 
+#modules for get info
+import psutil
+import platform
+from datetime import datetime
+
 ROOT = "/CONTROL/OUT/"
 
 
@@ -27,7 +32,7 @@ class Master:
     _Structure = []
 
     # ID Given
-    _ID_Given = []
+    _Status_IDS = []
 
     conex_to_Server= libmqtt.Client()
     conex = False
@@ -72,6 +77,9 @@ class Master:
         
     def get_Structure(self):
         return self._Structure
+
+    def get_Status_IDS(self):
+        return self._Status_IDS
 
     def get_IP_SERVER(self):
         return self._IP_SERVER
@@ -157,6 +165,8 @@ class Master:
                 #check the correct topic for get number
                 RegEx_Get_Id = "^"+ROOT+"GET_MY_ID/.*$"
                 RegEx_Get_Connect_Nodes = "^"+ROOT+"ID-.+/GET_CONNECT_NODES$"
+                Regex_Give_Info = "^"+ ROOT + "ID-.+/GIVE_INFO$"
+
                 if re.search(RegEx_Get_Id, self.message.topic):
                     code = self.message.topic[-29:]
                     data_in=json.loads(self.message.payload)
@@ -181,6 +191,8 @@ class Master:
                         "ID":new_Id,
                         "List_Stages":Number_Stage
                     }
+                    dicc_tmp = {}
+                    self._Status_IDS.insert(new_Id,[0,dicc_tmp])#counter + diccionary
                     self.get_Structure()[Number_Pipeline].append(dicc)
                     data_out=json.dumps(dicc)
                     self.conex_to_Server.publish(ROOT +"SET_MY_ID/" + code, data_out)
@@ -194,9 +206,15 @@ class Master:
                         Previus_ID = self.__ID_Previus_Stage(Number_Pipeline, i)
                         if  Previus_ID != -1:
                             data_out=json.dumps(Previus_ID)
-                            self.conex_to_Server.publish(ROOT + "ID-" + str(dicc["ID"]) + "/New_Suscriber", data_out)
+                            self.conex_to_Server.publish(ROOT + "ID-" + str(dicc["ID"]) + "/NEW_SUSCRIBER", data_out)
                             data_out=json.dumps(dicc["ID"])
-                            self.conex_to_Server.publish(ROOT + "ID-" + str(Previus_ID) + "/New_Publisher", data_out)
+                            self.conex_to_Server.publish(ROOT + "ID-" + str(Previus_ID) + "/NEW_PUBLISHER", data_out)
+
+                elif re.search(Regex_Give_Info, self.message.topic):
+                    data_in=json.loads(self.message.payload)
+                    dicc = data_in
+                    Iterator_ID = dicc["ID"]
+                    self._Status_IDS[Iterator_ID] = [0, dicc] 
 
             self.lock_event.release()
 
@@ -227,7 +245,7 @@ class Master:
         return _ID_Previus_Node
         
 
-    """def __ID_Next_Stage(self, pipeline, stage):
+    def __ID_Next_Stage(self, pipeline, stage):
         structure = self.get_Structure()
         _ID_Next_Node = -1
         for i in range(len(structure)):
@@ -236,7 +254,7 @@ class Master:
                     for x in w["List_Stages"]:
                         if x == stage+1:
                             _ID_Next_Node = w["ID"]
-        return _ID_Next_Node"""
+        return _ID_Next_Node
 
     def __Get_Pipeline(self, Id):
         structure = self.get_Structure()
@@ -245,6 +263,39 @@ class Master:
                 if w["ID"] == Id:
                     return i
         return -1
+
+    def request_info(self):
+        for i in self.get_Status_IDS():
+            if i[0] < 999: #999 is the counter limit
+                i[0] = i[0] + 1 
+        self.conex_to_Server.publish(ROOT + "REQUEST_INFO", 0)
+
+    def delete_Id_status(self, Id):
+        structure = self.get_Structure()
+        for i in range(len(structure)):
+            for w in structure[i]:
+                if w["ID"] == Id:
+                    if len(w["List_Stages"]) != 0:
+                        empty_stages = w["List_Stages"]
+                        w["List_Stages"] = []
+                        dicc = {
+                            "ID":Id,
+                            "List_Stages": w["List_Stages"]
+                        }
+                        data_out=json.dumps(dicc)
+                        self.conex_to_Server.publish(ROOT + "ID-" + str(Id) + "/UPDATE_STAGE", data_out)
+                        data_out=json.dumps(-1)
+                        self.conex_to_Server.publish(ROOT + "ID-" + str(Id) + "/NEW_SUSCRIBER", data_out)
+                        self.conex_to_Server.publish(ROOT + "ID-" + str(Id) + "/NEW_PUBLISHER", data_out)
+                        Previus_ID = self.__ID_Previus_Stage(i, empty_stages[0])
+                        if Previus_ID != -1:
+                            self.conex_to_Server.publish(ROOT + "ID-" + str(Previus_ID) + "/NEW_PUBLISHER", data_out)
+                        ##actualizar para el siguiente quien era su anterior
+                        Post_ID = self.__ID_Next_Stage(i, empty_stages[-1])
+                        if Post_ID != -1:
+                            self.conex_to_Server.publish(ROOT + "ID-" + str(Post_ID) + "/NEW_SUSCRIBER", data_out)
+                    
+
         
 
 
@@ -265,7 +316,7 @@ class Slave:
     _MY_ID = -1
     _Stages = []
     _Mac = hex(get_mac())
-    _Time = datetime.datetime.now().time()
+    _Time = datetime.now().time()
 
     #Nodes 
     _Previus_Node = []
@@ -321,6 +372,10 @@ class Slave:
         data_out=json.dumps(dicc)
         self.conex_to_Server.publish(ROOT + "ID-" + str(self.get_MY_ID()) + "/GET_CONNECT_NODES", data_out)
 
+        #The slave is ready to give his info 
+        MQTT_TOPIC = [(ROOT + "REQUEST_INFO",0)]
+        self.conex_to_Server.subscribe(MQTT_TOPIC)
+
 
     # Methods
     def get_MY_ID(self):
@@ -362,6 +417,52 @@ class Slave:
     def __TakeNumber(self):
         data_out=json.dumps(self.get_Pipeline())
         self.conex_to_Server.publish(ROOT + "GET_MY_ID/" + str(self._Mac) + str(self._Time), data_out)
+
+    def get_size(bytes, suffix="B"):
+        """
+        Scale bytes to its proper format
+        e.g:
+            1253656 => '1.20MB'
+            1253656678 => '1.17GB'
+        """
+        factor = 1024
+        for unit in ["", "K", "M", "G", "T", "P"]:
+            if bytes < factor:
+                return f"{bytes:.2f}{unit}{suffix}"
+            bytes /= factor
+
+    def get_Info_From_Slave(self):
+
+        #stats Frecuency
+        cpufreq = psutil.cpu_freq()
+        #stats Mem
+        svmem = psutil.virtual_memory()
+        #stats Network
+        NetSpeed = psutil.net_if_stats()
+        InfoAllNIC = []
+        for nic, addrs in psutil.net_if_addrs().items():
+            if nic in NetSpeed:
+                st = NetSpeed[nic]
+                diccNic ={
+                    "NIC": nic,
+                    "Speed": st.speed
+                }
+                InfoAllNIC.append(diccNic)
+
+        #stats Battery
+        battery = psutil.sensors_battery()
+
+        dicc = {
+                        "ID":self.get_MY_ID(),
+                        "MAX_FREQUENCY(MHZ)": round(cpufreq.max, 2),
+                        "MIN_FREQUENCY(MHZ)": round(cpufreq.min, 2),
+                        "CURRENT_FREQUENCY(MHZ)": round(cpufreq.current, 2),
+                        "TOTAL_CPU_USAGE(%)": psutil.cpu_percent(),
+                        "MEMORY_PERCENTAGE(%)": svmem.percent,
+                        "NETWORK_SPEED(MB)": InfoAllNIC,
+                        "BATTERY_PERCENTAGE(%)": battery.percent
+                    }
+        return dicc
 
 
     lock_event = allocate_lock()
@@ -449,21 +550,44 @@ class Slave:
                 print (f"DATA_RECEIVED: {self.message.topic}={self.message.payload}")
                 #check topic for save the number
                 RegEx_Set_ID = "^"+ ROOT + "SET_MY_ID/" + str(self._Mac) + str(self._Time) + "$"#quitar time en el futuro
-                RegEx_New_Subcriber = "^"+ ROOT + "ID-" + str(self.get_MY_ID()) + "/New_Suscriber"
-                RegEx_New_Publisher = "^"+ ROOT + "ID-" + str(self.get_MY_ID()) + "/New_Publisher"
+                RegEx_New_Subcriber = "^"+ ROOT + "ID-" + str(self.get_MY_ID()) + "/NEW_SUSCRIBER"
+                RegEx_New_Publisher = "^"+ ROOT + "ID-" + str(self.get_MY_ID()) + "/NEW_PUBLISHER"
+                RegEx_Update_Stage = "^"+ ROOT + "ID-" + str(self.get_MY_ID()) + "/UPDATE_STAGE"
+                RegeX_Request_Info = "^"+ ROOT + "REQUEST_INFO" + "$"
+
+
                 if re.search(RegEx_Set_ID, self.message.topic):
                     #assign number
                     data_in=json.loads(self.message.payload)
+                    print(data_in)
                     self._MY_ID = data_in['ID']
                     self._Stages = data_in['List_Stages']
+
                 elif re.search(RegEx_New_Subcriber, self.message.topic):
                     #assign new subcriber
                     data_in=json.loads(self.message.payload)
-                    self._Previus_Node.append(data_in)
+                    if data_in != -1:
+                        self._Previus_Node.append(data_in)
+                    else:
+                        self._Previus_Node.clear()
+
                 elif re.search(RegEx_New_Publisher, self.message.topic):
                     #assign next node
                     data_in=json.loads(self.message.payload)
-                    self._Next_Node.append(data_in)
+                    if data_in != -1:
+                        self._Next_Node.append(data_in)
+                    else:
+                        self._Next_Node.clear()
+
+                elif re.search(RegEx_Update_Stage, self.message.topic):
+                    self._Stages = []
+
+                elif re.search(RegeX_Request_Info, self.message.topic):
+                    #get info from this slave
+                    dicc = self.get_Info_From_Slave()
+                    data_out=json.dumps(dicc)
+                    self.conex_to_Server.publish(ROOT + "ID-" + str(self.get_MY_ID()) + "/GIVE_INFO", data_out)
+
 
             self.lock_event.release()
 

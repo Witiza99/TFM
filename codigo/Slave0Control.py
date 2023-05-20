@@ -167,16 +167,19 @@ def Stages(stage, message):
 
 #library usage example
 test = STRPLibrary.Slave(0, IP_SERVER, PORT)
+print("="*40, "Slave, Initial Info", "="*40)
 print("My Id->" + str(test.get_MY_ID()))
 print("My Pipeline->" + str(test.get_Pipeline()))
 print("My Stages->" + str(test.get_Stages()))
 print("IP_SERVER->" + str(test.get_IP_SERVER()))
 print("Port->" + str(test.get_PORT()) + "\n")
+print("="*80)
 
 Suscribers = []
 
+#main program
 while(True):
-    print("I'm living")
+    print("="*40, "Slave, I'm living", "="*40)
     print("ID->" + str(test.get_MY_ID()))
     print("Pipeline->" + str(test.get_Pipeline()))
     print("Stages->" + str(test.get_Stages()))
@@ -225,6 +228,8 @@ while(True):
                     data_out = Stages(stage, data_out)
                 for i in test.get_Topics_Publish():
                     conex_to_Server.publish(i, data_out)
+
+    print("="*80)
 
     sleep(30)
 
