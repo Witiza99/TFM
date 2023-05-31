@@ -118,29 +118,17 @@ while(True):
                 for id_value in list_id_with_differents_id:
                     if n_free_slaves != 0:
                         while(len(id_value["List_Stages"]) > 1):
-                            print("primero")
-                            print(id_value["List_Stages"])
                             list_free_slaves = test.get_Free_Slaves(i)# check the free slaves
                             print("There are the following slaves free -> " + str(list_free_slaves))
                             n_free_slaves = len(list_free_slaves)
                             if n_free_slaves > 0: # if there are some slaves, status is assigned to a free id
                                 n_stage = id_value["List_Stages"][-1]
-                                print("stage" + str(n_stage))
-                                print(test.get_Stages_Without_ID(i))
-                                print(id_value["List_Stages"])
                                 test.delete_Stage_To_Id(n_stage, id_value["ID"])# delete stage from id
-                                print(id_value["List_Stages"])
-                                print(test.get_Stages_Without_ID(i))
-                                print("stage" + str(n_stage))
                                 test.set_Stage_To_Id(n_stage, list_free_slaves[randint(0, n_free_slaves - 1)])# put stage to free id
-                                print(id_value["List_Stages"])
-                                id_value["List_Stages"]
-                                print("segundo")
-                                print(id_value["List_Stages"])
                             else:
                                 break
                     else:
-                        print("There are the following slaves free -> " + str(list_free_slaves))
+                        print("Don't exists slaves free -> " + str(list_free_slaves))
             else:
                 print("Can't split stages")
 

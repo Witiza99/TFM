@@ -617,9 +617,6 @@ class Master:
                     self.conex_to_Server.publish(ROOTSLAVE + "ID-" + str(Id) + "/UPDATE_STAGE", data_out)
                     # update id for previous stage
                     Previus_ID = self.ID_Previus_Stage(i, w["List_Stages"][0])
-                    print(w["List_Stages"][0])
-                    print(w["List_Stages"])
-                    print(Previus_ID)
                     if  Previus_ID != -1:
                         data_out=json.dumps(Previus_ID)
                         self.conex_to_Server.publish(ROOTSLAVE + "ID-" + str(dicc["ID"]) + "/NEW_SUSCRIBER", data_out)

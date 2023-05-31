@@ -19,3 +19,17 @@ gnome-terminal --execute python3.8 Slave0Control.py
 sleep 1
 gnome-terminal --execute python3.8 Slave0Control.py
 sleep 1
+
+# 2 SLAVES PIPELINE 1
+gnome-terminal --execute python3.8 Slave1Control.py
+sleep 1
+gnome-terminal --execute python3.8 Slave1Control.py
+sleep 1
+
+# 3 SLAVES PIPELINE 2
+gnome-terminal --execute python3.8 Slave2Control.py
+sleep 1
+gnome-terminal --execute python3.8 Slave2Control.py
+sleep 1
+gnome-terminal --execute python3.8 Slave2Control.py
+sleep 1
