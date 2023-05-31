@@ -210,3 +210,22 @@ for nic, addrs in psutil.net_if_addrs().items():
         if addr.ptp:
             print("      p2p       : %s" % addr.ptp)
     print("")"""
+
+
+    """
+    Master
+    /CONTROL/MASTER/GET_MY_ID
+    /CONTROL/MASTER/ID-X/GET_CONNECT_NODES
+    /CONTROL/MASTER/ID-X/GIVE_INFO
+
+    Slave
+    /CONTROL/SLAVE/SET_MY_ID/X
+    /CONTROL/SLAVE/ID-X/NEW_SUSCRIBER
+    /CONTROL/SLAVE/ID-X/NEW_PUBLISHER
+    /CONTROL/SLAVE/REQUEST_INFO
+    /CONTROL/SLAVE/ID-X/UPDATE_STAGE
+
+    App
+    /APPLICATION_CONTEXT/ID-X
+
+    """
