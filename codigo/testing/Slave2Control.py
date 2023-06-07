@@ -11,7 +11,6 @@ import re
 import json
 import math
 import STRPLibrary
-import time
 
 # Global variables
 # Server
@@ -36,7 +35,7 @@ ACTIVE_SUBSCRIPTION = 4
 DATA_RECEIVED = 5
 
 # Stage Number
-N_STAGE = 3
+N_STAGE = 5
 
 # N Pipeline
 N_PIPELINE = 2
@@ -159,63 +158,61 @@ while(not conex):
 # Stages examples
 def Stages(stage, message):
     global N_PACKAGE
-    # Stage 0, create 100 rand numbers
+    # Stage 0, create iterator
     if stage == 0:
-        start_time = time.time()
-        buffer_length = 100
         buffer = []
         #Nº Package
         buffer.append(N_PACKAGE)
-        #Start count
-        buffer.append(start_time)
         N_PACKAGE = N_PACKAGE + 1
-        for i in range(0, buffer_length):
-            buffer.append(randint(0, 1000) / 100.0)
+        buffer.append(1)
         data_out = json.dumps(buffer)
         return data_out
 
-    # Stage 1, create mean with the 100 before numbers
+    # Stage 1, iterator + 1
     elif stage == 1:
         data_in = json.loads(message)
-        mean = 0.0
-        for n in data_in[2:]:
-            mean += n
-        mean = mean/(len(data_in)-2)
-        print("N package")
-        print(data_in[0])
-        print("Mean")
-        print(round(mean, 2))
-        data_in.append(round(mean, 2))
+        iterator = data_in[-1]
+        iterator = iterator + 1
+        print("Iterator")
+        print(iterator)
+        data_in.pop()
+        data_in.append(iterator)
         data_out = json.dumps(data_in)
         return data_out
 
-    # Stage 2, create variance with the mean and the 100 before numbers
+    # Stage 2, iterator + 1
     elif stage == 2:
-        data_in=json.loads(message)
-        mean = data_in[-1]
+        data_in = json.loads(message)
+        iterator = data_in[-1]
+        iterator = iterator + 1
+        print("Iterator")
+        print(iterator)
         data_in.pop()
-        n_package_last = data_in[0]
-        data_in.pop(0)
-        n_time = data_in[0]
-        data_in.pop(0)
-        variance = 0
-        for data in data_in:
-            variance += math.pow((data - mean), 2)
-        variance = variance/(len(data_in))
-        data_in.clear()
-        print("N package")
-        print(n_package_last)
-        data_in.append(n_package_last)
-        print("Time elapsed")
-        time_elapsed = round(time.time() - n_time, 4)
-        print(time_elapsed)
-        data_in.append(time_elapsed)
-        print("Mean")
-        print(mean)
-        data_in.append(mean)
-        print("Variance")
-        print (round(variance, 2))
-        data_in.append(round(variance, 2))
+        data_in.append(iterator)
+        data_out = json.dumps(data_in)
+        return data_out
+
+    # Stage 3, iterator + 1
+    elif stage == 3:
+        data_in = json.loads(message)
+        iterator = data_in[-1]
+        iterator = iterator + 1
+        print("Iterator")
+        print(iterator)
+        data_in.pop()
+        data_in.append(iterator)
+        data_out = json.dumps(data_in)
+        return data_out
+
+    # Stage 4, iterator + 1
+    elif stage == 4:
+        data_in = json.loads(message)
+        iterator = data_in[-1]
+        iterator = iterator + 1
+        print("Iterator")
+        print(iterator)
+        data_in.pop()
+        data_in.append(iterator)
         data_out = json.dumps(data_in)
         return data_out
 

@@ -11,6 +11,7 @@ import re
 import json
 import math
 import STRPLibrary
+import time
 
 # Global variables
 # Server
@@ -37,10 +38,16 @@ DATA_RECEIVED = 5
 # Stage Number
 N_STAGE = 3
 
+# N Pipeline
+N_PIPELINE = 1
+
 # List Stages
 n_stage = []
 for i in range(0, N_STAGE):
     n_stage.append(i)
+
+# Package Number
+N_PACKAGE = 0
 
 # String application context
 STR_APPLICATION_CONTEXT = "/APPLICATION_CONTEXT/"
@@ -126,8 +133,13 @@ def __eventsProcessor():
                     for stage in matches:# process all stage with matches
                         print("Processing Stage " + str(stage) + "...")
                         data_out = Stages(stage, data_out)
-                    if len(test.get_Topics_Publish()) != 0:# check if there are some topic to publish
-                        conex_to_Server.publish(test.get_Topics_Publish()[-1], data_out)#the final result is published
+                    if matches[-1] != N_STAGE - 1:#check if it's the last stage
+                        if len(test.get_Topics_Publish()) != 0:# check if there are some topic to publish
+                            conex_to_Server.publish(test.get_Topics_Publish()[-1], data_out)#the final result is published
+                    else:
+                        STR_N_PIPELINE = "PIPELINE-" + str(N_PIPELINE)
+                        topic = STR_APPLICATION_CONTEXT + STR_N_PIPELINE + "/RESULT"
+                        conex_to_Server.publish(topic, data_out)#the final result is published
 
 # Create a thread with the func __eventsProcessor
 start_new_thread(__eventsProcessor,())
@@ -146,10 +158,17 @@ while(not conex):
 
 # Stages examples
 def Stages(stage, message):
+    global N_PACKAGE
     # Stage 0, create 100 rand numbers
     if stage == 0:
+        start_time = time.time()
         buffer_length = 100
         buffer = []
+        #Nº Package
+        buffer.append(N_PACKAGE)
+        #Start count
+        buffer.append(start_time)
+        N_PACKAGE = N_PACKAGE + 1
         for i in range(0, buffer_length):
             buffer.append(randint(0, 1000) / 100.0)
         data_out = json.dumps(buffer)
@@ -159,26 +178,38 @@ def Stages(stage, message):
     elif stage == 1:
         data_in = json.loads(message)
         mean = 0.0
-        for n in data_in:
+        for n in data_in[2:]:
             mean += n
-        mean = mean/len(data_in)
+        mean = mean/(len(data_in)-2)
+        print("N package")
+        print(data_in[0])
         print("Mean")
         print(round(mean, 2))
         data_in.append(round(mean, 2))
         data_out = json.dumps(data_in)
         return data_out
 
-    # Stage 1, create variance with the mean and the 100 before numbers
+    # Stage 2, create variance with the mean and the 100 before numbers
     elif stage == 2:
         data_in=json.loads(message)
-        n = len(data_in) -1
-        mean = data_in[n]
+        mean = data_in[-1]
+        data_in.pop()
+        n_package_last = data_in[0]
+        data_in.pop(0)
+        n_time = data_in[0]
+        data_in.pop(0)
         variance = 0
-        data_in.pop(n)
         for data in data_in:
             variance += math.pow((data - mean), 2)
-        variance = variance/(n-1)
+        variance = variance/(len(data_in))
         data_in.clear()
+        print("N package")
+        print(n_package_last)
+        data_in.append(n_package_last)
+        print("Time elapsed")
+        time_elapsed = round(time.time() - n_time, 4)
+        print(time_elapsed)
+        data_in.append(time_elapsed)
         print("Mean")
         print(mean)
         data_in.append(mean)
@@ -189,7 +220,7 @@ def Stages(stage, message):
         return data_out
 
 # Call the slave class
-test = STRPLibrary.Slave(1, IP_SERVER, PORT) # 1 is pipeline 1
+test = STRPLibrary.Slave(N_PIPELINE, IP_SERVER, PORT) # 0 is pipeline 0
 
 # Initial print with some info
 print("="*40, "Slave, Initial Info", "="*40)
