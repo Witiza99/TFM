@@ -80,7 +80,7 @@ while(True):
                 else:# check if slave is dead, if true, the status for that id is deleted (5 trys)
                     if len(test.get_stages_from_Id(i[1]["ID"])) != 0:# check if status is empty
                         if (-1 in test.get_stages_from_Id(i[1]["ID"])) == False:# check if status is empty or working
-                            test.delete_Id_status(i[1]["ID"])
+                            test.delete_Id_stage(i[1]["ID"])
 
     # Check if some status is not assigned, trying to assign to some id
     for i in range(len(structure)):
@@ -89,7 +89,7 @@ while(True):
         if len(list_Stages_Without_Id) != 0:#try to assign status to empty id or merge with others
             for w in list_Stages_Without_Id:
                 list_free_slaves = test.get_Free_Slaves(i)# check the free slaves
-                print("Trying to assign id to status -> " + str(w))
+                print("Trying to assign stage to id -> " + str(w))
                 print("There are the following slaves free -> " + str(list_free_slaves))
                 n_free_slaves = len(list_free_slaves)
                 if n_free_slaves > 0: # if there are some slaves, status is assigned to a free id

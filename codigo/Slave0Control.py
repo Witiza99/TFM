@@ -162,7 +162,7 @@ def Stages(stage, message):
     # Stage 0, create 100 rand numbers
     if stage == 0:
         start_time = time.time()
-        buffer_length = 100
+        buffer_length = 10000000
         buffer = []
         #Nº Package
         buffer.append(N_PACKAGE)
@@ -264,8 +264,13 @@ while(True):
                 for stage in matches:# process all stage with matches
                     print("Processing Stage " + str(stage) + "...")
                     data_out = Stages(stage, data_out)
-                if len(test.get_Topics_Publish()) != 0:# check if there are some topic to publish
-                    conex_to_Server.publish(test.get_Topics_Publish()[-1], data_out)#the final result is published
+                if matches[-1] != N_STAGE - 1:#check if it's the last stage
+                    if len(test.get_Topics_Publish()) != 0:# check if there are some topic to publish
+                        conex_to_Server.publish(test.get_Topics_Publish()[-1], data_out)#the final result is published
+                else:
+                    STR_N_PIPELINE = "PIPELINE-" + str(N_PIPELINE)
+                    topic = STR_APPLICATION_CONTEXT + STR_N_PIPELINE + "/RESULT"
+                    conex_to_Server.publish(topic, data_out)#the final result is published
 
     print("="*80)
 

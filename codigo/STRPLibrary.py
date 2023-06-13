@@ -513,14 +513,14 @@ class Master:
 
 
     # ==============================
-    # delete_Id_status
+    # delete_Id_stage
     # ==============================
-    # Func that delete status for id given, update neighbors status, this id dont work
+    # Func that delete stage for id given, update neighbors stage, this id dont work
     # Param in ->
     # Id: Nº id
     # Param out ->
     # None
-    def delete_Id_status(self, Id):
+    def delete_Id_stage(self, Id):
         structure = self.get_Structure()
         for i in range(len(structure)):
             for w in structure[i]:
@@ -756,8 +756,8 @@ class Slave:
         self.__connect_to_server()# try to connect to the server
 
         # Stop code when this slave doesn't have ID
+        self.__TakeNumber()
         while(self.get_MY_ID() == -1):
-            self.__TakeNumber()
             print("Taking a ID from Master... ")
             sleep(10)
 
@@ -1154,6 +1154,7 @@ class Slave:
         return self._Next_Node
 
 
+    """
     # ==============================
     # get_Topics_Subscribe
     # ==============================
@@ -1166,7 +1167,7 @@ class Slave:
         _Topics_Subscribe = []
         for i in self.get_Previus_Node():
             _Topics_Subscribe.append("/APPLICATION_CONTEXT/ID-" + str(i))
-        return _Topics_Subscribe
+        return _Topics_Subscribe"""
 
 
     # ==============================
