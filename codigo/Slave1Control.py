@@ -162,7 +162,7 @@ def Stages(stage, message):
     # Stage 0, create 100 rand numbers
     if stage == 0:
         start_time = time.time()
-        buffer_length = 10000000
+        buffer_length = 100
         buffer = []
         #Nº Package
         buffer.append(N_PACKAGE)
@@ -240,7 +240,7 @@ while(True):
     print("ID->" + str(test.get_MY_ID()))
     print("Pipeline->" + str(test.get_Pipeline()))
     print("Stages->" + str(test.get_Stages()))
-    print("Previus_Node->" + str(test.get_Previus_Node()))
+    print("Previous_Node->" + str(test.get_Previous_Node()))
     print("Next_Node->" + str(test.get_Next_Node()))
     Topic = STR_APPLICATION_CONTEXT + "ID-" + str(test.get_MY_ID())
 

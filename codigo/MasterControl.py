@@ -101,9 +101,9 @@ while(True):
                         next_id = test.ID_Next_Stage(i,w)
                         if next_id != -1:
                             test.set_Stage_To_Id(w, next_id)
-                        elif test.ID_Previus_Stage(i,w) != -1:
-                            previus_id = test.ID_Previus_Stage(i,w)
-                            test.set_Stage_To_Id(w, previus_id)
+                        elif test.ID_Previous_Stage(i,w) != -1:
+                            Previous_id = test.ID_Previous_Stage(i,w)
+                            test.set_Stage_To_Id(w, Previous_id)
                         else:
                            print("Can't merge stages") 
                 print()

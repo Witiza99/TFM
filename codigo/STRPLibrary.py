@@ -286,12 +286,12 @@ class Master:
                     Number_Pipeline = self.__Get_Pipeline(dicc["ID"])
                     #Get connect nodes
                     if len(dicc["List_Stages"]) != 0:# check if List_Stages is empty
-                        Previus_ID = self.ID_Previus_Stage(Number_Pipeline, dicc["List_Stages"][0])
-                        if  Previus_ID != -1:# check if exist previus id
-                            data_out=json.dumps(Previus_ID)
+                        Previous_ID = self.ID_Previous_Stage(Number_Pipeline, dicc["List_Stages"][0])
+                        if  Previous_ID != -1:# check if exist Previous id
+                            data_out=json.dumps(Previous_ID)
                             self.conex_to_Server.publish(ROOTSLAVE + "ID-" + str(dicc["ID"]) + "/NEW_SUSCRIBER", data_out)# update previous nodes for actual id
                             data_out=json.dumps(dicc["ID"])
-                            self.conex_to_Server.publish(ROOTSLAVE + "ID-" + str(Previus_ID) + "/NEW_PUBLISHER", data_out)# update next nodes for before id
+                            self.conex_to_Server.publish(ROOTSLAVE + "ID-" + str(Previous_ID) + "/NEW_PUBLISHER", data_out)# update next nodes for before id
 
                 # if the topic match with the Give Info, update _Status_IDS with new status info and reset the counter
                 elif re.search(Regex_Give_Info, self.message.topic):
@@ -470,25 +470,25 @@ class Master:
 
 
     # ==============================
-    # ID_Previus_Stage
+    # ID_Previous_Stage
     # ==============================
     # Func get the previous stage for stage given (inside pipeline)
     # Param in ->
     # pipeline: Nº pipeline 
     # stage: Nº stage 
     # Param out ->
-    # ID_Previus_Node: ID for previous stage to the stage passed
-    def ID_Previus_Stage(self, pipeline, stage):
+    # ID_Previous_Node: ID for previous stage to the stage passed
+    def ID_Previous_Stage(self, pipeline, stage):
         structure = self.get_Structure()
-        ID_Previus_Node = -1
+        ID_Previous_Node = -1
         if stage != 0:# if stage is 0, we dont need to check
             for i in range(len(structure)):
                 if i == pipeline:
                     for w in structure[i]:
                         for x in w["List_Stages"]:
                             if x == stage-1:
-                                ID_Previus_Node = w["ID"]
-        return ID_Previus_Node
+                                ID_Previous_Node = w["ID"]
+        return ID_Previous_Node
         
 
     # ==============================
@@ -539,9 +539,9 @@ class Master:
                         self.conex_to_Server.publish(ROOTSLAVE + "ID-" + str(Id) + "/NEW_SUSCRIBER", data_out)
                         self.conex_to_Server.publish(ROOTSLAVE + "ID-" + str(Id) + "/NEW_PUBLISHER", data_out)
                         # update id for next stage
-                        Previus_ID = self.ID_Previus_Stage(i, empty_stages[0])
-                        if Previus_ID != -1:
-                            self.conex_to_Server.publish(ROOTSLAVE + "ID-" + str(Previus_ID) + "/NEW_PUBLISHER", data_out)
+                        Previous_ID = self.ID_Previous_Stage(i, empty_stages[0])
+                        if Previous_ID != -1:
+                            self.conex_to_Server.publish(ROOTSLAVE + "ID-" + str(Previous_ID) + "/NEW_PUBLISHER", data_out)
                         # update id for previous stage
                         Post_ID = self.ID_Next_Stage(i, empty_stages[-1])
                         if Post_ID != -1:
@@ -613,12 +613,12 @@ class Master:
                     data_out=json.dumps(dicc)
                     self.conex_to_Server.publish(ROOTSLAVE + "ID-" + str(Id) + "/UPDATE_STAGE", data_out)
                     # update id for previous stage
-                    Previus_ID = self.ID_Previus_Stage(i, w["List_Stages"][0])
-                    if  Previus_ID != -1:
-                        data_out=json.dumps(Previus_ID)
+                    Previous_ID = self.ID_Previous_Stage(i, w["List_Stages"][0])
+                    if  Previous_ID != -1:
+                        data_out=json.dumps(Previous_ID)
                         self.conex_to_Server.publish(ROOTSLAVE + "ID-" + str(dicc["ID"]) + "/NEW_SUSCRIBER", data_out)
                         data_out=json.dumps(dicc["ID"])
-                        self.conex_to_Server.publish(ROOTSLAVE + "ID-" + str(Previus_ID) + "/NEW_PUBLISHER", data_out)
+                        self.conex_to_Server.publish(ROOTSLAVE + "ID-" + str(Previous_ID) + "/NEW_PUBLISHER", data_out)
                     # update id for next stage
                     Post_ID = self.ID_Next_Stage(i, w["List_Stages"][-1])
                     if Post_ID != -1:
@@ -656,12 +656,12 @@ class Master:
                         data_out=json.dumps(dicc)
                         self.conex_to_Server.publish(ROOTSLAVE + "ID-" + str(Id) + "/UPDATE_STAGE", data_out)
                         # update id for previous stage
-                        Previus_ID = self.ID_Previus_Stage(i, w["List_Stages"][0])
-                        if  Previus_ID != -1:
-                            data_out=json.dumps(Previus_ID)
+                        Previous_ID = self.ID_Previous_Stage(i, w["List_Stages"][0])
+                        if  Previous_ID != -1:
+                            data_out=json.dumps(Previous_ID)
                             self.conex_to_Server.publish(ROOTSLAVE + "ID-" + str(dicc["ID"]) + "/NEW_SUSCRIBER", data_out)
                             data_out=json.dumps(dicc["ID"])
-                            self.conex_to_Server.publish(ROOTSLAVE + "ID-" + str(Previus_ID) + "/NEW_PUBLISHER", data_out)
+                            self.conex_to_Server.publish(ROOTSLAVE + "ID-" + str(Previous_ID) + "/NEW_PUBLISHER", data_out)
                         # update id for next stage
                         Post_ID = self.ID_Next_Stage(i, w["List_Stages"][-1])
                         if Post_ID != -1:
@@ -697,7 +697,7 @@ class Slave:
     _Time = datetime.now().time()
 
     # Nodes 
-    _Previus_Node = []
+    _Previous_Node = []
     _Next_Node = []
 
     # Topics
@@ -936,10 +936,10 @@ class Slave:
                     # Assign new subcriber
                     data_in=json.loads(self.message.payload)
                     if data_in != -1:
-                        self._Previus_Node.clear()
-                        self._Previus_Node.append(data_in) 
+                        self._Previous_Node.clear()
+                        self._Previous_Node.append(data_in) 
                     else:
-                        self._Previus_Node.clear()
+                        self._Previous_Node.clear()
 
                 # if the topic match with the RegEx New Publisher, update the next node
                 elif re.search(RegEx_New_Publisher, self.message.topic):
@@ -1131,15 +1131,15 @@ class Slave:
 
 
     # ==============================
-    # get_Previus_Node
+    # get_Previous_Node
     # ==============================
     # This funcion return the previous node from slave 
     # Param in ->
     # None
     # Param out ->
-    # _Previus_Node: List with the previous node
-    def get_Previus_Node(self):
-        return self._Previus_Node
+    # _Previous_Node: List with the previous node
+    def get_Previous_Node(self):
+        return self._Previous_Node
 
 
     # ==============================
@@ -1165,7 +1165,7 @@ class Slave:
     # _Topics_Subscribe: List with Topics Subscribe
     def get_Topics_Subscribe(self):
         _Topics_Subscribe = []
-        for i in self.get_Previus_Node():
+        for i in self.get_Previous_Node():
             _Topics_Subscribe.append("/APPLICATION_CONTEXT/ID-" + str(i))
         return _Topics_Subscribe"""
 
