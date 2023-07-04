@@ -35,7 +35,6 @@ DATA_RECEIVED = 5
 # Stage Pipelines
 N_PIPELINES = 3
 
-
 # String application context
 STR_APPLICATION_CONTEXT = "/APPLICATION_CONTEXT/"
 
@@ -192,15 +191,16 @@ def __eventsProcessor():
 
                     n_package = int(data_in[0])
                     time = data_in[1]
-                    mean = data_in[2]
-                    variance = data_in[3]
+                    throughput_time = data_in[2]
+                    mean = data_in[3]
+                    variance = data_in[4]
 
                     key_N_PACKAGE = STR_N_PIPELINE + "N_PACKAGE" 
                     key_MEAN = STR_N_PIPELINE + "MEAN" 
                     key_VARIANCE = STR_N_PIPELINE + "VARIANCE" 
 
                     Dict = {
-                        key_N_PACKAGE: {"value": n_package, "context": {"time_elapsed": time}},  
+                        key_N_PACKAGE: {"value": n_package, "context": {"Delay": time, "Throughput": throughput_time}},  
                         key_MEAN: mean,               
                         key_VARIANCE: variance
                     }

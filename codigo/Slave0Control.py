@@ -52,6 +52,9 @@ N_PACKAGE = 0
 # String application context
 STR_APPLICATION_CONTEXT = "/APPLICATION_CONTEXT/"
 
+# Time for Throughput
+time_last_packet = 0
+
 
 # Func for established connection
 def __established_connection(client, userdata, flags, rc):
@@ -158,11 +161,11 @@ while(not conex):
 
 # Stages examples
 def Stages(stage, message):
-    global N_PACKAGE
+    global N_PACKAGE, time_last_packet
     # Stage 0, create 100 rand numbers
     if stage == 0:
         start_time = time.time()
-        buffer_length = 100
+        buffer_length = 10000000
         buffer = []
         #Nº Package
         buffer.append(N_PACKAGE)
@@ -206,10 +209,19 @@ def Stages(stage, message):
         print("N package")
         print(n_package_last)
         data_in.append(n_package_last)
-        print("Time elapsed")
-        time_elapsed = round(time.time() - n_time, 4)
-        print(time_elapsed)
-        data_in.append(time_elapsed)
+        print("Delay")
+        Delay = round(time.time() - n_time, 4)
+        print(Delay)
+        data_in.append(Delay)
+        print("Throughput")
+        if time_last_packet != 0:
+            Throughput = round(time.time() - time_last_packet, 4)
+            time_last_packet = time.time()
+        else:
+            Throughput = Delay
+            time_last_packet = time.time()
+        print(Throughput)
+        data_in.append(Throughput)
         print("Mean")
         print(mean)
         data_in.append(mean)
