@@ -35,8 +35,10 @@ PUBLICATION_MADE = 3
 ACTIVE_SUBSCRIPTION = 4
 DATA_RECEIVED = 5
 
+T = 10 #Process time
+
 # Stage Number
-N_STAGE = 3
+N_STAGE = 10
 
 # N Pipeline
 N_PIPELINE = 0
@@ -165,52 +167,44 @@ def Stages(stage, message):
     # Stage 0, create 100 rand numbers
     if stage == 0:
         start_time = time.time()
-        buffer_length = 10000000
         buffer = []
         #Nº Package
         buffer.append(N_PACKAGE)
         #Start count
         buffer.append(start_time)
         N_PACKAGE = N_PACKAGE + 1
-        for i in range(0, buffer_length):
-            buffer.append(randint(0, 1000) / 100.0)
+
+        sleep(T/N_STAGE)
+        
+        if stage == N_STAGE-1:#check if exist only one stage
+            buffer.pop()
+            print("Delay")
+            Delay = round(time.time() - start_time, 4)
+            print(Delay)
+            buffer.append(Delay)
+            print("Throughput")
+            if time_last_packet != 0:
+                Throughput = round(time.time() - time_last_packet, 4)
+                time_last_packet = time.time()
+            else:
+                Throughput = Delay 
+                time_last_packet = time.time()
+            print(Throughput)
+            buffer.append(Throughput)
+
         data_out = json.dumps(buffer)
         return data_out
 
-    # Stage 1, create mean with the 100 before numbers
-    elif stage == 1:
-        data_in = json.loads(message)
-        mean = 0.0
-        for n in data_in[2:]:
-            mean += n
-        mean = mean/(len(data_in)-2)
-        print("N package")
-        print(data_in[0])
-        print("Mean")
-        print(round(mean, 2))
-        data_in.append(round(mean, 2))
-        data_out = json.dumps(data_in)
-        return data_out
-
-    # Stage 2, create variance with the mean and the 100 before numbers
-    elif stage == 2:
+    # Last Stage, create mean with the 100 before numbers
+    elif stage == N_STAGE-1:
+        sleep(T/N_STAGE)
         data_in=json.loads(message)
-        mean = data_in[-1]
-        data_in.pop()
         n_package_last = data_in[0]
-        data_in.pop(0)
-        n_time = data_in[0]
-        data_in.pop(0)
-        variance = 0
-        for data in data_in:
-            variance += math.pow((data - mean), 2)
-        variance = variance/(len(data_in))
+        n_time = data_in[1]
         data_in.clear()
-        print("N package")
-        print(n_package_last)
         data_in.append(n_package_last)
         print("Delay")
-        Delay = round(time.time() - n_time, 4) + 30#seconds of synthetic delay
+        Delay = round(time.time() - n_time, 4)
         print(Delay)
         data_in.append(Delay)
         print("Throughput")
@@ -222,14 +216,17 @@ def Stages(stage, message):
             time_last_packet = time.time()
         print(Throughput)
         data_in.append(Throughput)
-        print("Mean")
-        print(mean)
-        data_in.append(mean)
-        print("Variance")
-        print (round(variance, 2))
-        data_in.append(round(variance, 2))
+        data_out = json.dumps(data_in)
+        
+        return data_out
+
+    # Other stage
+    else:
+        sleep(T/N_STAGE)
+        data_in=json.loads(message)
         data_out = json.dumps(data_in)
         return data_out
+        
 
 # Call the slave class
 test = STRPLibrary.Slave(N_PIPELINE, IP_SERVER, PORT) # 0 is pipeline 0
@@ -248,24 +245,27 @@ Suscribers = []
 # Loop with the main program
 while(True):
     # Print with some info (current stage, next id, before id, etc)
-    print("="*40, "Slave, I'm living", "="*40)
+    """print("="*40, "Slave, I'm living", "="*40)
     print("ID->" + str(test.get_MY_ID()))
     print("Pipeline->" + str(test.get_Pipeline()))
     print("Stages->" + str(test.get_Stages()))
     print("Previous_Node->" + str(test.get_Previous_Node()))
-    print("Next_Node->" + str(test.get_Next_Node()))
+    print("Next_Node->" + str(test.get_Next_Node()))"""
     Topic = STR_APPLICATION_CONTEXT + "ID-" + str(test.get_MY_ID())
-
+    """
     print("Suscribe to ->")# print suscribers
-    print(Topic)
+    print(Topic)"""
     MQTT_TOPIC = [(Topic,0)]
+    #print(MQTT_TOPIC)
     conex_to_Server.subscribe(MQTT_TOPIC)
-    print()
+    """print()
 
     print("Current Publishers ->")# print publisher
     for i in test.get_Topics_Publish():
         print(i)
-    print()
+    print()"""
+    if N_PACKAGE == 0:
+        sleep(10)
 
     # Check if i'm the first stage
     data_out=json.dumps([])
@@ -284,8 +284,8 @@ while(True):
                     topic = STR_APPLICATION_CONTEXT + STR_N_PIPELINE + "/RESULT"
                     conex_to_Server.publish(topic, data_out)#the final result is published
 
-    print("="*80)
+    #print("="*80)
 
-    sleep(30)
+    #sleep(5)
 
     

@@ -33,10 +33,15 @@ ACTIVE_SUBSCRIPTION = 4
 DATA_RECEIVED = 5
 
 # Stage Pipelines
-N_PIPELINES = 3
+N_PIPELINES = 1
 
 # String application context
 STR_APPLICATION_CONTEXT = "/APPLICATION_CONTEXT/"
+
+#test variables
+accum_packets_delay = []
+accum_packets_throughput = []
+end = False
 
 
 # Func for established connection
@@ -162,7 +167,7 @@ def main(mqtt_ubidots_client, Dict):
 
 # Func to process the events (previously modified)
 def __eventsProcessor():
-    global conex_to_Server, lock, conex, message
+    global conex_to_Server, lock, conex, message, accum_packets_delay, mean_thoughput, end
     while True:
         lock.acquire()
         if event == FAIL_CONEX:
@@ -184,29 +189,17 @@ def __eventsProcessor():
             print (f"DATA_RECEIVED: {message.topic}={message.payload}")
             data_in=json.loads(message.payload)
             # message processing to send to the cloud
-            for i in range(0, N_PIPELINES):
-                STR_N_PIPELINE = "PIPELINE-" + str(i)
-                topic = STR_APPLICATION_CONTEXT + STR_N_PIPELINE + "/RESULT"
-                if message.topic == topic:
-
-                    n_package = int(data_in[0])
-                    time = data_in[1] 
-                    throughput_time = data_in[2]
-                    mean = data_in[3]
-                    variance = data_in[4]
-
-                    key_N_PACKAGE = STR_N_PIPELINE + "N_PACKAGE" 
-                    key_MEAN = STR_N_PIPELINE + "MEAN" 
-                    key_VARIANCE = STR_N_PIPELINE + "VARIANCE" 
-
-                    Dict = {
-                        key_N_PACKAGE: {"value": n_package, "context": {"Delay": time, "Throughput": throughput_time}},  
-                        key_MEAN: mean,               
-                        key_VARIANCE: variance
-                    }
-
-                    # publish results on ubidots
-                    main(mqtt_ubidots_client, Dict)
+            print(data_in[0])
+            accum_packets_delay.append(data_in[1])
+            accum_packets_throughput.append(data_in[2])
+            
+            if len(accum_packets_delay) == 10:
+                mean_delay = sum(accum_packets_delay)/10
+                mean_thoughput = sum(accum_packets_throughput)/10
+                print(mean_delay)
+                print(mean_thoughput)
+                end = True
+                print(end)
             
 
 # Create a thread with the func __eventsProcessor
@@ -226,6 +219,6 @@ while(not conex):
 
 
 # Loop with the main program
-while(True):
+while(not end):
 
-    sleep(30)
+    sleep(15)

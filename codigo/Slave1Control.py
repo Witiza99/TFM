@@ -213,7 +213,7 @@ def Stages(stage, message):
         print("Delay")
         print(n_time)
         print(time.time())
-        Delay = round(time.time() - n_time, 4)
+        Delay = round(time.time() - n_time, 4) + 30#seconds of synthetic delay
         print(Delay)
         data_in.append(Delay)
         print("Throughput")
@@ -223,7 +223,7 @@ def Stages(stage, message):
             Throughput = round(time.time() - time_last_packet, 4)
             time_last_packet = time.time()
         else:
-            Throughput = Delay
+            Throughput = Delay 
             time_last_packet = time.time()
         print(Throughput)
         data_in.append(Throughput)
